@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 Alfresco Software, Ltd.
+ * Copyright 2017-2025 Hyland Software, Inc. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.util.Date;
 import java.util.Objects;
+import java.util.Optional;
 import org.activiti.cloud.api.model.shared.QueryCloudVariableInstance;
 import org.activiti.cloud.api.model.shared.events.CloudVariableEvent;
 import org.hibernate.annotations.DynamicInsert;
@@ -61,7 +62,7 @@ public class ProcessVariableEntity extends AbstractVariableEntity implements Que
 
     private String variableDefinitionId;
 
-    private boolean ephemeral;
+    private Boolean ephemeral;
 
     @Schema(
         description = "The business key associated to the process instance. It could be useful to add a reference to external systems.",
@@ -140,10 +141,10 @@ public class ProcessVariableEntity extends AbstractVariableEntity implements Que
     }
 
     public boolean isEphemeral() {
-        return ephemeral;
+        return Optional.ofNullable(ephemeral).orElse(false);
     }
 
-    public void setEphemeral(boolean ephemeral) {
+    public void setEphemeral(Boolean ephemeral) {
         this.ephemeral = ephemeral;
     }
 

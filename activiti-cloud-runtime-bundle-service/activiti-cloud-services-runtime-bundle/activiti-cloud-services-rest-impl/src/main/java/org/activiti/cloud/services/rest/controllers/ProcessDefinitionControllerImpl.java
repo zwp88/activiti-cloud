@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 Alfresco Software, Ltd.
+ * Copyright 2017-2025 Hyland Software, Inc. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,11 +114,13 @@ public class ProcessDefinitionControllerImpl implements ProcessDefinitionControl
     @Override
     public PagedModel<EntityModel<ExtendedCloudProcessDefinition>> getProcessDefinitions(
         @RequestParam(required = false, defaultValue = "") List<String> include,
+        String excludedCategory,
         Pageable pageable
     ) {
         Page<ProcessDefinition> page = processDefinitionService.getProcessDefinitions(
             pageConverter.toAPIPageable(pageable),
-            include
+            include,
+            excludedCategory
         );
         return pagedCollectionModelAssembler.toModel(
             pageable,

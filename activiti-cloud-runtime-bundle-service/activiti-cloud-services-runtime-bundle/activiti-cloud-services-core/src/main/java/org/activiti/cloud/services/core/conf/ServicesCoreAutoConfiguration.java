@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 Alfresco Software, Ltd.
+ * Copyright 2017-2025 Hyland Software, Inc. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,10 +202,10 @@ public class ServicesCoreAutoConfiguration {
 
     @FunctionBinding(input = ProcessEngineChannels.COMMAND_CONSUMER, output = ProcessEngineChannels.COMMAND_RESULTS)
     @Bean("commandConnectorConsumer")
-    public <T extends Payload, R> Function<Message<T>, R> commandEndpointConnector(
+    public <T extends Payload, R> Function<Message<Payload>, R> commandEndpointConnector(
         @Qualifier("commandEndpoint") CommandEndpoint<T> commandEndpoint
     ) {
-        return message -> commandEndpoint.execute(message.getPayload());
+        return message -> commandEndpoint.execute((T) message.getPayload());
     }
 
     @Bean

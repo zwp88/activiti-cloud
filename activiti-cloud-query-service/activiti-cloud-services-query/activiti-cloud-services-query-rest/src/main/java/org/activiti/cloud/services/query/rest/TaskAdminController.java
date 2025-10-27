@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 Alfresco Software, Ltd.
+ * Copyright 2017-2025 Hyland Software, Inc. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -228,5 +228,12 @@ public class TaskAdminController extends TaskControllerAdvice {
                 .map(TaskCandidateGroupEntity::getGroupId)
                 .collect(Collectors.toList())
             : null;
+    }
+
+    @Operation(summary = "Count tasks")
+    @JsonView(JsonViews.ProcessVariables.class)
+    @PostMapping("/count")
+    public Long countTasks(@RequestBody TaskSearchRequest taskSearchRequest) {
+        return taskControllerHelper.countTasksUnrestricted(taskSearchRequest);
     }
 }

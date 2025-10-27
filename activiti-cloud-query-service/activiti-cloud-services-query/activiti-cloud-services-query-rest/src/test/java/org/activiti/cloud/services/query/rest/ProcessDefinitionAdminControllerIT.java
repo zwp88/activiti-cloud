@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 Alfresco Software, Ltd.
+ * Copyright 2017-2025 Hyland Software, Inc. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,6 +137,23 @@ public class ProcessDefinitionAdminControllerIT {
         //when
         mockMvc
             .perform(get("/admin/v1/process-definitions?skipCount=10&maxItems=10").accept(MediaType.APPLICATION_JSON))
+            //then
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    public void shouldReturnLatestProcessDefinition() throws Exception {
+        //given
+        given(processDefinitionRepository.findAll(any(), any(Pageable.class)))
+            .willReturn(
+                new PageImpl<>(Collections.singletonList(buildDefaultProcessDefinition()), PageRequest.of(1, 10), 11)
+            );
+        //when
+        mockMvc
+            .perform(
+                get("/admin/v1/process-definitions?latestVersion=true&skipCount=10&maxItems=10")
+                    .accept(MediaTypes.HAL_JSON_VALUE)
+            )
             //then
             .andExpect(status().isOk());
     }

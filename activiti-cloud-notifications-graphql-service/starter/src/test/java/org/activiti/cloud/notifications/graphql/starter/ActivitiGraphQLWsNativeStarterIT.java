@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 Alfresco Software, Ltd.
+ * Copyright 2017-2025 Hyland Software, Inc. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import org.activiti.cloud.api.process.model.events.CloudBPMNTimerFailedEvent;
 import org.activiti.cloud.api.process.model.events.CloudBPMNTimerFiredEvent;
 import org.activiti.cloud.api.process.model.events.CloudBPMNTimerRetriesDecrementedEvent;
 import org.activiti.cloud.api.process.model.events.CloudBPMNTimerScheduledEvent;
+import org.activiti.cloud.api.process.model.events.CloudProcessCompletedEvent;
 import org.activiti.cloud.api.process.model.events.CloudProcessCreatedEvent;
 import org.activiti.cloud.api.process.model.events.CloudProcessDeployedEvent;
 import org.activiti.cloud.api.process.model.events.CloudProcessStartedEvent;
@@ -54,6 +55,7 @@ import org.activiti.cloud.api.process.model.impl.events.CloudBPMNTimerFailedEven
 import org.activiti.cloud.api.process.model.impl.events.CloudBPMNTimerFiredEventImpl;
 import org.activiti.cloud.api.process.model.impl.events.CloudBPMNTimerRetriesDecrementedEventImpl;
 import org.activiti.cloud.api.process.model.impl.events.CloudBPMNTimerScheduledEventImpl;
+import org.activiti.cloud.api.process.model.impl.events.CloudProcessCompletedEventImpl;
 import org.activiti.cloud.api.process.model.impl.events.CloudProcessCreatedEventImpl;
 import org.activiti.cloud.api.process.model.impl.events.CloudProcessDeployedEventImpl;
 import org.activiti.cloud.api.process.model.impl.events.CloudProcessStartedEventImpl;
@@ -1108,6 +1110,7 @@ class ActivitiGraphQLWsNativeStarterIT {
                     + "      value"
                     + "      processInstance(where: {status: {EQ: RUNNING}}) {"
                     + "        id"
+                    + "        status"
                     + "      }"
                     + "    }"
                     + "  }"
@@ -1364,5 +1367,94 @@ class ActivitiGraphQLWsNativeStarterIT {
 
     static StringObjectMapBuilder mapBuilder() {
         return new StringObjectMapBuilder();
+    }
+
+    @Test
+    void testGraphqlSubscription_PROCESS_COMPLETED_withActor() {
+        Map<String, Object> variables = mapBuilder()
+            .put("appName", "default-app")
+            .put("eventTypes", Arrays.array("PROCESS_COMPLETED"))
+            .put("actor", "bob")
+            .get();
+
+        var document =
+            """
+            subscription($appName: String!, $eventTypes: [EngineEventType!], $actor: String!) {
+              engineEvents(appName: [$appName], eventType: $eventTypes, actor: [$actor]) {
+                processInstanceId
+                eventType
+                actor
+              }
+            }""";
+
+        CloudProcessCompletedEvent event1 = new CloudProcessCompletedEventImpl() {
+            {
+                setAppName("default-app");
+                setServiceName("rb-my-app");
+                setServiceFullName("serviceFullName");
+                setServiceType("runtime-bundle");
+                setServiceVersion("");
+                setProcessInstanceId("processInstanceId");
+                setProcessDefinitionId("processDefinitionId");
+                setProcessDefinitionKey("processDefinitionKey");
+                setProcessDefinitionVersion(1);
+                setBusinessKey("businessKey");
+                setActor("bob");
+            }
+        };
+
+        CloudProcessCompletedEvent event2 = new CloudProcessCompletedEventImpl() {
+            {
+                setAppName("default-app");
+                setServiceName("rb-my-app");
+                setServiceType("runtime-bundle");
+                setServiceFullName("serviceFullName");
+                setServiceType("runtime-bundle");
+                setServiceVersion("");
+                setProcessInstanceId("processInstanceId");
+                setProcessDefinitionId("processDefinitionId");
+                setProcessDefinitionKey("processDefinitionKey");
+                setProcessDefinitionVersion(1);
+                setBusinessKey("businessKey");
+                setActor("bob");
+            }
+        };
+
+        CloudProcessCompletedEvent event3 = new CloudProcessCompletedEventImpl() {
+            {
+                setAppName("default-app");
+                setServiceName("rb-my-app");
+                setServiceType("runtime-bundle");
+                setServiceFullName("serviceFullName");
+                setServiceType("runtime-bundle");
+                setServiceVersion("");
+                setProcessInstanceId("processInstanceId");
+                setProcessDefinitionId("processDefinitionId");
+                setProcessDefinitionKey("processDefinitionKey");
+                setProcessDefinitionVersion(1);
+                setBusinessKey("businessKey");
+                setActor("fred");
+            }
+        };
+
+        var messages = List.of(
+            Map.of("processInstanceId", "processInstanceId", "eventType", "PROCESS_COMPLETED", "actor", "bob"),
+            Map.of("processInstanceId", "processInstanceId", "eventType", "PROCESS_COMPLETED", "actor", "bob")
+        );
+
+        Flux<List> flux =
+            this.graphQlTester.document(document)
+                .variables(variables)
+                .executeSubscription()
+                .toFlux("engineEvents", List.class);
+
+        StepVerifier
+            .create(flux)
+            .expectSubscription()
+            .thenAwait(Duration.ofMillis(300))
+            .then(sendEvents(event1, event2, event3))
+            .expectNext(messages)
+            .thenCancel()
+            .verify(TIMEOUT);
     }
 }
